@@ -1,7 +1,7 @@
 clear;clc;close all;
 % Add path and import point cloud
 addpath(genpath('A:\TreeQSM-master-241\src')); % Add TreeQSM path
-addpath(genpath('C:\Users\xipeng\Downloads\skeletonization-master\cloudcontr_2_0')); %A dd laplacian path
+addpath(genpath('C:\Users\xipeng\Downloads\skeletonization-master\cloudcontr_2_0')); %Add laplacian path
 P = readmatrix("C:\Users\xipeng\Downloads\L1-Tree-main\Data\tree_A_032.txt"); % Read point cloud data in txt format
 
 % Get branch segmentation input parameters
@@ -63,6 +63,7 @@ for h = 1:length(PatchDiam1)
   end
 end
 
+
 data1 = [P, double(segment2.SegmentOfPoint)];
 data0 = data1(data1(:, 4) == 0, :);
 data2 = [double(cylinder.branch), double(cylinder.radius)];
@@ -72,9 +73,8 @@ data1(data1(:, 4) == 0, :) = [];
 
 % Extract the size of each branch
 [unique_orders, ~, idx] = unique(data2(:, 1), 'stable');
-first_branch_sizes = [unique_orders, accumarray(idx, data2(:, 2), [], @min)];
+first_branch_sizes = [unique_orders, accumarray(idx, data2(:, 2), [], @max)];
 
-% Update branch segmentation data
 result = nan(size(data1, 1), size(data1, 2) + 1);
 for i = 1:size(data1, 1)
     current_order = data1(i, 4);
@@ -85,14 +85,17 @@ for i = 1:size(data1, 1)
     end
 end
 
+% Update branch segmentation data
 [idx, ~] = knnsearch(result(:, 1:3), data0(:, 1:3));
+
 
 data0(:, 4) = result(idx, 4);
 data0(:, 5) = result(idx, 5);
 
+
 A = [result; data0];
 
-options.USING_POINT_RING = GS.USING_POINT_RING;  % 设置选项
+options.USING_POINT_RING = GS.USING_POINT_RING;  
 
 % Get all unique order values
 branch_orders = unique(A(:, 4));
@@ -100,65 +103,50 @@ branch_orders = unique(A(:, 4));
 % Initialize the matrix to store the results
 final_result = [];
 
-% Use parallel computing to extract skeleton data
-% parfor k = 1:length(branch_orders)
-parfor k = 1:2
-    order = branch_orders(k);
+% computing to extract skeleton data
+for i = 1:length(unique_orders)
+    % current order 
+    order = unique_orders(i);
     
-    % Retrieve the data of the current branch order
     B = A(A(:, 4) == order, :);
-
-    % Initialize temporary variables to store results
-    temp_result = [];
-
-    % Downsample the data and select different resolutions according to the value of size
-    for size_category = {'large', 'medium', 'small'}
-        if strcmp(size_category, 'large')
-            size_condition = B(:, 5) > 10;
-            grid_step = 0.04;
-        elseif strcmp(size_category, 'medium')
-            size_condition = B(:, 5) > 2 & B(:, 5) <= 10;
-            grid_step = 0.02;
-        else
-            size_condition = B(:, 5) <= 2;
-            grid_step = 0.003;
-        end
-        
-        % If there is point cloud data that meets the conditions
-        if any(size_condition)
-            % Extract data that meets the conditions
-            data_to_downsample = B(size_condition, :);
-            
-            % Generate point cloud object and perform downsampling
-            ptCloud = pointCloud(data_to_downsample(:, 1:3));
-            ptCloud_ds = pcdownsample(ptCloud, 'gridAverage', grid_step);
-            
-            % Update the downsampled point cloud data
-            downsampled_data = [ptCloud_ds.Location, data_to_downsample(1:size(ptCloud_ds.Location, 1), 4:5)];
-            branch_data = downsampled_data(:, 1:3);
-
-            % Process point cloud data
-            C = struct();
-            C.pts = branch_data;
-            C.npts = size(C.pts, 1);
-            [C.bbox, C.diameter] = GS.compute_bbox(C.pts);
-
-            % Build local 1-ring
-            C.k_knn = GS.compute_k_knn(C.npts);
-            C.rings = compute_point_point_ring(C.pts, C.k_knn, []);
-
-            % Use the Laplace method to contract the point cloud
-            [C.cpts, ~, ~, ~, ~] = contraction_by_mesh_laplacian(C, options);
-
-            % Add the current result to a temporary variable
-            temp_result = [temp_result; C.cpts];
-        end
+    
+    % branch size
+    max_size = max(B(:, 5));
+    
+    % Set the downsampling resolution
+    if max_size > 10
+        grid_step = 0.04;
+    elseif max_size > 2 && max_size <= 10
+        grid_step = 0.02;
+    else
+        grid_step = 0.005;
     end
     
-    % Add the temporary result to the final result
-    final_result = [final_result; temp_result];
+    % downsample each branch point cloud data
+    ptCloud = pointCloud(B(:, 1:3));
+    ptCloud_ds = pcdownsample(ptCloud, 'gridAverage', grid_step);
+    
+    
+    C = [ptCloud_ds.Location, repmat(order, size(ptCloud_ds.Location, 1), 1), ...
+         B(1:size(ptCloud_ds.Location, 1), 5)];
+    C = C(:, 1:3);
+
+    branch.pts = C;  
+    branch.npts = size(branch.pts, 1);  
+    [branch.bbox, branch.diameter] = GS.compute_bbox(branch.pts);
+    % Build local 1-ring       
+    branch.k_knn = GS.compute_k_knn(branch.npts);
+    branch.rings = compute_point_point_ring(branch.pts, branch.k_knn, []);
+    % Use the Laplace method to contract the point cloud
+    [branch.cpts, t, initWL, WC, sl] = contraction_by_mesh_laplacian(branch, options);
+    % save final skeleton data
+    final_result = [final_result; branch.cpts];
+    
 end
-toc
+
 % save skeleton data
 save('C:\Users\xipeng\Downloads\skeletonization-master\cloudcontr_2_0\result\tree_32_test.txt', 'final_result', '-ascii');
+
+
+
 
