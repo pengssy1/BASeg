@@ -2,7 +2,7 @@
 
 # Retrieval of branch angles from terrestrial laser scanning data using an Instance Segmentation-based Contraction method
 
-# How to implement it
+# How to implement InSeg
 
 # 1. Download dependency packages
 
