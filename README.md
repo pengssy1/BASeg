@@ -1,6 +1,6 @@
 # InSeg
 
-# InSeg: A method to automatically extract branch angles from TLS data
+# Retrieval of branch angles from terrestrial laser scanning data using an Instance Segmentation-based Contraction method
 
 # How to implement it
 
