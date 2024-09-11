@@ -23,14 +23,14 @@ How to implement it
 
    3.2 Implement it on HPC (batch submission script)
 
-   Upload 03_hpc to your HPC path
+   (1) Upload 03_hpc to your HPC path
 
-   cd /data/gent/vo/000/gvo00074/Xipeng/creat # Enter the creat file on your HPC
+   (2) cd /data/gent/vo/000/gvo00074/Xipeng/creat # Enter the creat file on your HPC
 
-   python input_file_name.py # Extract the input tree point cloud file name, replace directory_path as your input file path on your HPC
+   (3) python input_file_name.py # Extract the input tree point cloud file name, replace directory_path as your input file path on your HPC
 
-   python create_task.py # Generate corresponding run.r and job.sh files for all tree point clouds, replace run_path, driver_path, output_path as your file path on your HPC
+   (4) python create_task.py # Generate corresponding run.r and job.sh files for all tree point clouds, replace run_path, driver_path, output_path as your file path on your HPC
 
-   cd /data/gent/vo/000/gvo00074/Xipeng/creat/run
+   (5) cd /data/gent/vo/000/gvo00074/Xipeng/creat/run
 
-   bash run.sh # Batch submission script
+   (6) bash run.sh # Batch submission script
