@@ -9,11 +9,11 @@ How to implement it
 
 2. Get tree skeleton data
 
-Run 01_step_InSeg_parrallel.m in MATLAB.
+   Run 01_step_InSeg_parrallel.m in MATLAB.
 
-It will generate skeleton data of an individual tree. Replace the input file with an individual tree point cloud file in txt format in your local computer.
+   It will generate skeleton data of an individual tree. Replace the input file with an individual tree point cloud file in txt format in your local computer.
 
-4. Automatically extract branch angles
+3. Automatically extract branch angles
    
    3.1 Implement it in R
 
