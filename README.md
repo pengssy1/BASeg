@@ -18,13 +18,13 @@
 
 # 3. Automatically extract branch angles
    
-   3.1 Implement it in R
+   # 3.1 Implement it in R
 
    Run 02_angle_calculate in R.
 
    It will automatically extract branch angles from the skeleton data generated in the first step. The input path is the skeleton data in txt format generated in the previous step.
 
-   3.2 Implement it on HPC (batch submission script)
+   # 3.2 Implement it on HPC (batch submission script)
 
    (1) Upload 03_hpc to your HPC path
 
