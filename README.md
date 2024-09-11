@@ -1,19 +1,22 @@
 # InSeg
 
-InSeg: A method to automatically extract branch angles from TLS data
+# InSeg: A method to automatically extract branch angles from TLS data
 
-How to implement it
+# How to implement it
 
-1. Download TreeQSM 2.4.1  https://github.com/InverseTampere/TreeQSM
-   Download Laplacian algorithm  https://github.com/jjcao/skeletonization
+# 1. Download dependency packages
 
-2. Get tree skeleton data
+   TreeQSM 2.4.1  https://github.com/InverseTampere/TreeQSM
+   
+   Laplacian algorithm  https://github.com/jjcao/skeletonization
+
+# 2. Get tree skeleton data
 
    Run 01_step_InSeg_parrallel.m in MATLAB.
 
    It will generate skeleton data of an individual tree. Replace the input file with an individual tree point cloud file in txt format in your local computer.
 
-3. Automatically extract branch angles
+# 3. Automatically extract branch angles
    
    3.1 Implement it in R
 
@@ -25,20 +28,12 @@ How to implement it
 
    (1) Upload 03_hpc to your HPC path
 
-   (2) cd /data/gent/vo/000/gvo00074/Xipeng/creat
+   (2) cd /data/gent/vo/000/gvo00074/Xipeng/creat        # Enter the creat file on your HPC
 
-   # Enter the creat file on your HPC
+   (3) python input_file_name.py                   # Extract the input tree point cloud file name, replace directory_path as your input file path on your HPC
 
-   (3) python input_file_name.py
-
-   # Extract the input tree point cloud file name, replace directory_path as your input file path on your HPC
-
-   (4) python create_task.py
-
-   # Generate corresponding run.r and job.sh files for all tree point clouds, replace run_path, driver_path, output_path as your file path on your HPC
+   (4) python create_task.py                       # Generate corresponding run.r and job.sh files for all tree point clouds, replace run_path, driver_path, output_path as your file path on your HPC
 
    (5) cd /data/gent/vo/000/gvo00074/Xipeng/creat/run
 
-   (6) bash run.sh
-
-   # Batch submission script
+   (6) bash run.sh                                  # Batch submission script
