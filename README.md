@@ -4,11 +4,10 @@ InSeg: A method to automatically extract branch angles from TLS data
 
 How to implement it
 
-1. Get tree skeleton data
-Download TreeQSM 2.4.1  https://github.com/InverseTampere/TreeQSM
+1. Download TreeQSM 2.4.1  https://github.com/InverseTampere/TreeQSM
+   Download Laplacian algorithm  https://github.com/jjcao/skeletonization
 
-Download Laplacian algorithm  https://github.com/jjcao/skeletonization
-
+2. Get tree skeleton data
 Run 01_step_InSeg_parrallel.m in MATLAB. 
 It will generate skeleton data of an individual tree. Replace the input file with an individual tree point cloud file in txt format in your local computer.
 
