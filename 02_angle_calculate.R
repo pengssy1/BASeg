@@ -308,6 +308,7 @@ for (i in 2:number) {
 }
 result <- na.omit(result) 
 result <- round(result, digits = 2)
+colnames(result)[ncol(result)] <- "angle"
 
 # save automated extraction branch angles
 write.table(result, file = outpath, row.names = FALSE, col.names = TRUE)
