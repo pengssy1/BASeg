@@ -72,28 +72,31 @@ data2 = [double(cylinder.branch), double(cylinder.radius)];
 data1(data1(:, 4) == 0, :) = [];
 
 % Extract the size of each branch
-[unique_orders, ~, idx] = unique(data2(:, 1), 'stable');
-first_branch_sizes = [unique_orders, accumarray(idx, data2(:, 2), [], @max)];
+branch_size = accumarray(data2(:,1), data2(:,2), [], @max);
+branch_number = unique(data1(:,4));
 
-result = nan(size(data1, 1), size(data1, 2) + 1);
-for i = 1:size(data1, 1)
-    current_order = data1(i, 4);
-    size_value = first_branch_sizes(first_branch_sizes(:, 1) == current_order, 2);
+branch = [branch_number, branch_size];
+
+% 创建一个空的第五列，初始化为 NaN
+data1(:, 5) = NaN;
+
+% 对于每个 order，在 data1 中找到相应的行并将 size 传递给第五列
+for i = 1:size(branch, 1)
+    order = branch(i, 1);
+    size_value = branch(i, 2);
     
-    if ~isempty(size_value)
-        result(i, :) = [data1(i, :), size_value];
-    end
+    % 找到 data1 中与当前 order 匹配的行，并将 size_value 赋值给第五列
+    data1(data1(:, 4) == order, 5) = size_value;
 end
 
+
 % Update branch segmentation data
-[idx, ~] = knnsearch(result(:, 1:3), data0(:, 1:3));
+[idx, ~] = knnsearch(data1(:, 1:3), data0(:, 1:3));
 
+data0(:, 4) = data1(idx, 4);
+data0(:, 5) = data1(idx, 5);
 
-data0(:, 4) = result(idx, 4);
-data0(:, 5) = result(idx, 5);
-
-
-A = [result; data0];
+A = [data1; data0];
 
 options.USING_POINT_RING = GS.USING_POINT_RING;  
 
@@ -104,9 +107,10 @@ branch_orders = unique(A(:, 4));
 final_result = [];
 
 % computing to extract skeleton data
-for i = 1:length(unique_orders)
+% for i = 1:length(branch_orders)
+for i = 1:length(branch_orders)
     % current order 
-    order = unique_orders(i);
+    order = branch_orders(i);
     
     B = A(A(:, 4) == order, :);
     
@@ -114,9 +118,9 @@ for i = 1:length(unique_orders)
     max_size = max(B(:, 5));
     
     % Set the downsampling resolution
-    if max_size > 10
+    if max_size > 0.10
         grid_step = 0.04;
-    elseif max_size > 2 && max_size <= 10
+    elseif max_size > 0.02 && max_size <= 0.10
         grid_step = 0.02;
     else
         grid_step = 0.005;
@@ -126,26 +130,26 @@ for i = 1:length(unique_orders)
     ptCloud = pointCloud(B(:, 1:3));
     ptCloud_ds = pcdownsample(ptCloud, 'gridAverage', grid_step);
     
-    
-    C = [ptCloud_ds.Location, repmat(order, size(ptCloud_ds.Location, 1), 1), ...
-         B(1:size(ptCloud_ds.Location, 1), 5)];
-    C = C(:, 1:3);
+    C = ptCloud_ds.Location;
 
-    branch.pts = C;  
-    branch.npts = size(branch.pts, 1);  
-    [branch.bbox, branch.diameter] = GS.compute_bbox(branch.pts);
+    D.pts = C;  
+    D.npts = size(D.pts, 1);  
+    [D.bbox, D.diameter] = GS.compute_bbox(D.pts);
     % Build local 1-ring       
-    branch.k_knn = GS.compute_k_knn(branch.npts);
-    branch.rings = compute_point_point_ring(branch.pts, branch.k_knn, []);
+    D.k_knn = GS.compute_k_knn(D.npts);
+    D.rings = compute_point_point_ring(D.pts, D.k_knn, []);
     % Use the Laplace method to contract the point cloud
-    [branch.cpts, t, initWL, WC, sl] = contraction_by_mesh_laplacian(branch, options);
+    [D.cpts, t, initWL, WC, sl] = contraction_by_mesh_laplacian(D, options);
     % save final skeleton data
-    final_result = [final_result; branch.cpts];
+    final_result = [final_result; D.cpts];
     
 end
 
 % save skeleton data
-save('C:\Users\xipeng\Downloads\skeletonization-master\cloudcontr_2_0\result\tree_32_test.txt', 'final_result', '-ascii');
+save('C:\Users\xipeng\Downloads\skeletonization-master\cloudcontr_2_0\result\tree_32_1.txt', 'final_result', '-ascii');
+
+
+
 
 
 
