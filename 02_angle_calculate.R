@@ -14,7 +14,7 @@ data <- data[, .(X, Y, Z)]
 
 # Parameter initialization
 D <- 0.01
-cl_dist <- 0.02
+cl_dist <- 0.01
 max_d <- 1
 
 # Add necessary columns
