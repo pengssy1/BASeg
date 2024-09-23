@@ -1,8 +1,8 @@
-# InSeg
+# BASeg
 
 # Retrieval of branch angles from terrestrial laser scanning data using an Instance Segmentation-based Contraction method
 
-# How to implement InSeg
+# How to implement BASeg
 
 # 1. Download dependency packages
 
