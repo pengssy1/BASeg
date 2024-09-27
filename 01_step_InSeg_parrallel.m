@@ -77,15 +77,15 @@ branch_number = unique(data1(:,4));
 
 branch = [branch_number, branch_size];
 
-% 创建一个空的第五列，初始化为 NaN
+
 data1(:, 5) = NaN;
 
-% 对于每个 order，在 data1 中找到相应的行并将 size 传递给第五列
+
 for i = 1:size(branch, 1)
     order = branch(i, 1);
     size_value = branch(i, 2);
     
-    % 找到 data1 中与当前 order 匹配的行，并将 size_value 赋值给第五列
+    
     data1(data1(:, 4) == order, 5) = size_value;
 end
 
