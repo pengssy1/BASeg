@@ -2,7 +2,10 @@ clear;clc;close all;
 % Add path and import point cloud
 addpath(genpath('A:\TreeQSM-master-241\src')); % Add TreeQSM path
 addpath(genpath('C:\Users\xipeng\Downloads\skeletonization-master\cloudcontr_2_0')); %Add laplacian path
-P = readmatrix("C:\Users\xipeng\Downloads\L1-Tree-main\Data\tree_A_032.txt"); % Read point cloud data in txt format
+inputfile = 'C:/Users/xipeng/BASeg_data_open/tree1-10m-002-6scans.txt';
+outputfile = 'C:/Users/xipeng/BASeg_data_open/tree1-10m-002-6scans_skeleton.txt';
+
+P = readmatrix(inputfile); % Read point cloud data in txt format
 
 % Get branch segmentation input parameters
 tic
@@ -146,7 +149,7 @@ for i = 1:length(branch_orders)
 end
 
 % save skeleton data
-save('C:\Users\xipeng\Downloads\skeletonization-master\cloudcontr_2_0\result\tree_32_1.txt', 'final_result', '-ascii');
+save(outputfile, 'final_result', '-ascii');
 
 
 
