@@ -7,7 +7,7 @@ library(fastcluster)
 library(dplyr)
 
 
-# input_file = "/user/gent/447/vsc44746/LIDAR/tree1-10m-002-4scans_point.las"
+# input_file = "/user/gent/447/vsc44746/LIDAR/tree1-10m-002-4scans_point.txt"
 # output_file = "/user/gent/447/vsc44746/lidar_results/tree1-10m-002-3scans_point.txt"
 
 
