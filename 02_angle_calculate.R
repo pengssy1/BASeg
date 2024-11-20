@@ -5,12 +5,12 @@ library(fastcluster)
 library(dplyr)
 
 # Read data and set column names
-inpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/skeleton_7.txt"
-outpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/tree7_angle.txt"
+inpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/skeleton7_test.txt"
+outpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/tree12_angle.txt"
 
 data <- fread(inpath)
-colnames(data)[1:3] <- c("X", "Y", "Z")
-data <- data[, .(X, Y, Z)]
+colnames(data)[1:4] <- c("X", "Y", "Z","order")
+# data <- data[, .(X, Y, Z)]
 
 # Parameter initialization
 cluster_len <- 0.01
@@ -20,7 +20,9 @@ cluster_sep <- 0.01
 data[, `:=`(ID = .I, iter = -1)]
 
 # First layer
-lay <- data[Z <= min(Z) + 0.1]
+# lay <- data[Z <= min(Z) + 0.1]
+lay <- data[Z <= min(Z) + 0.1 & order == 1]
+
 data[lay$ID, iter := 1]
 
 # Prepare data for hierarchical calculation
