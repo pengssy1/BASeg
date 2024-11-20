@@ -6,7 +6,7 @@ library(dplyr)
 
 # Read data and set column names
 inpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/skeleton_7.txt"
-# outpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/tree12_angle.txt"
+outpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/tree7_angle.txt"
 
 data <- fread(inpath)
 colnames(data)[1:3] <- c("X", "Y", "Z")
