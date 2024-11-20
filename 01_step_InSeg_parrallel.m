@@ -143,17 +143,12 @@ for i = 1:length(branch_orders)
     D.rings = compute_point_point_ring(D.pts, D.k_knn, []);
     % Use the Laplace method to contract the point cloud
     [D.cpts, t, initWL, WC, sl] = contraction_by_mesh_laplacian(D, options);
+    % Add order data to the contracted points
+    D.cpts_with_order = [D.cpts, repmat(order, size(D.cpts, 1), 1)];
     % save final skeleton data
-    final_result = [final_result; D.cpts];
+    final_result = [final_result; D.cpts_with_order];
     
 end
 
 % save skeleton data
 save(outputfile, 'final_result', '-ascii');
-
-
-
-
-
-
-
