@@ -6,16 +6,15 @@ library(dplyr)
 
 # Read data and set column names
 inpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/skeleton_7.txt"
-outpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/tree12_angle.txt"
+# outpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/tree12_angle.txt"
 
 data <- fread(inpath)
 colnames(data)[1:3] <- c("X", "Y", "Z")
 data <- data[, .(X, Y, Z)]
 
 # Parameter initialization
-D <- 0.01
-cl_dist <- 0.01
-max_d <- 1
+cluster_len <- 0.01
+cluster_sep <- 0.01
 
 # Add necessary columns
 data[, `:=`(ID = .I, iter = -1)]
@@ -25,31 +24,32 @@ lay <- data[Z <= min(Z) + 0.1]
 data[lay$ID, iter := 1]
 
 # Prepare data for hierarchical calculation
-dat2 <- data[-lay$ID]
+data2 <- data[-lay$ID]
 
 # Iterative layer calculation
 i <- 2
 
-while (nrow(dat2) > 0) {
+while (nrow(data2) > 0) {
   
   # Calculate maximum distance from each point to the previous layer
-  dat2[, dist := Rfast::rowMaxs(FNN::knnx.dist(data = lay[, 1:3], query = dat2[, 1:3], algorithm = "kd_tree", k = 1), value = TRUE)]
+  data2[, dist := Rfast::rowMaxs(FNN::knnx.dist(data = lay[, 1:3], query = data2[, 1:3], algorithm = "kd_tree", k = 1), value = TRUE)]
   
   # Select the points for the next layer
-  lay <- dat2[dist <= D]
+  lay <- data2[dist <= cluster_len]
   
   # If no points are found, select the nearest point to the already classified points as the new starting point
   if (nrow(lay) == 0) {
-    lay <- dat2[which.min(FNN::knnx.dist(data = data[iter != -1, 1:3], query = dat2[, 1:3], algorithm = "kd_tree", k = 1))]
+    lay <- data2[which.min(FNN::knnx.dist(data = data[iter != -1, 1:3], query = data2[, 1:3], algorithm = "kd_tree", k = 1))]
   }
   
   # Update iter value for the current layer points
   data[lay$ID, iter := i]
   
   # Remove the current layer points from the data
-  dat2 <- dat2[!ID %in% lay$ID]
+  data2 <- data2[!ID %in% lay$ID]
   i <- i + 1
 }
+
 
 #######################################################
 #- clustering non connected components in each layer -#
@@ -66,11 +66,11 @@ for (i in sort(unique(data$iter))) {
     # Calculate the distance matrix and perform hierarchical clustering
     dist_matrix <- stats::dist(data[in_iter, .(X, Y, Z)])
     hclust_result <- fastcluster::hclust(dist_matrix, method = "single")
-    clusters <- stats::cutree(hclust_result, h = cl_dist)
+    clusters <- stats::cutree(hclust_result, h = cluster_sep)
     
     # Store clustering results in data
     data[in_iter, cluster := clusters]
-
+    
     
   } else {
     
@@ -83,49 +83,49 @@ for (i in sort(unique(data$iter))) {
 ########################
 
 # Calculate the center of each cluster
-cl <- data[, .(X = mean(X), Y = mean(Y), Z = mean(Z), iter = iter), by = .(iter, cluster)]
-cl <- cl[, 3:6]
+cluster <- data[, .(X = mean(X), Y = mean(Y), Z = mean(Z), iter = iter), by = .(iter, cluster)]
+cluster <- cluster[, 3:6]
 
 # Initialization
-cl[, ':='(ID = 1:.N, done = 0)]
-cl2 <- copy(cl)
-root <- cl2[Z == min(Z)]
+cluster[, ':='(ID = 1:.N, done = 0)]
+cluster2 <- copy(cluster)
+root <- cluster2[Z == min(Z)]
 
 # Mark the root node as processed
-cl[root$ID, done := 1]
-cl2 <- cl2[-root$ID]
+cluster[root$ID, done := 1]
+cluster2 <- cluster2[-root$ID]
 
 # Initialize the skeleton data table
 skel <- data.table::data.table(matrix(ncol = 6))
 setnames(skel, c("startX", "startY", "startZ", "endX", "endY", "endZ"))
 
 # Build the skeleton
-while (nrow(cl2) > 0) {
+while (nrow(cluster2) > 0) {
   
   # Record the coordinates of the current root node
   start <- root[, 1:3]
   
   # Calculate the distance of all unprocessed nodes to the current root node
-  cl2[, dist := sqrt((X - root$X)^2 + (Y - root$Y)^2 + (Z - root$Z)^2)]
+  cluster2[, dist := sqrt((X - root$X)^2 + (Y - root$Y)^2 + (Z - root$Z)^2)]
   
   # Find the next root node that meets the condition
-  root <- cl2[dist == min(dist) & dist <= max_d & iter > root$iter]
+  root <- cluster2[dist == min(dist) & dist <= 1 & iter > root$iter]
   
   if (nrow(root) > 0) {
     # If a suitable root node is found, update it
-    cl[root$ID, done := 1]
-    cl2 <- cl2[!ID %in% root$ID]
+    cluster[root$ID, done := 1]
+    cluster2 <- cluster2[!ID %in% root$ID]
     skel <- rbindlist(list(skel, data.table(start[, 1:3], root[, 1:3])), use.names = FALSE)
   } else {
     # If not found, select the lowest unprocessed node and connect it to the nearest processed node
-    root <- cl2[which.min(iter)]
-    root <- root[which.min(FNN::knnx.dist(data = cl[done == 1, 1:3], query = root[, 1:3], algorithm = "kd_tree", k = 1))]
-    d <- sqrt((cl$X[cl$done == 1] - root$X)^2 + (cl$Y[cl$done == 1] - root$Y)^2 + (cl$Z[cl$done == 1] - root$Z)^2)
-    done <- cl[done == 1]
+    root <- cluster2[which.min(iter)]
+    root <- root[which.min(FNN::knnx.dist(data = cluster[done == 1, 1:3], query = root[, 1:3], algorithm = "kd_tree", k = 1))]
+    d <- sqrt((cluster$X[cluster$done == 1] - root$X)^2 + (cluster$Y[cluster$done == 1] - root$Y)^2 + (cluster$Z[cluster$done == 1] - root$Z)^2)
+    done <- cluster[done == 1]
     start <- done[d == min(d)]
     
-    cl[root$ID, done := 1]
-    cl2 <- cl2[ID != root$ID]
+    cluster[root$ID, done := 1]
+    cluster2 <- cluster2[ID != root$ID]
     skel <- rbindlist(list(skel, data.table(start[, 1:3], root[, 1:3])), use.names = FALSE)
   }
 }
@@ -165,56 +165,56 @@ cur_sec <- 1  # Current section
 skel[bearer_ID == 0, axis_ID := cur_ID]  # Assign axis_ID to the starting segment
 
 
-queue <- integer(0)  
-while (any(skel$axis_ID == 0)) {
-  
+# Initialize the queue
+node_queue <- integer(0)  
+
+while (any(skel$axis_ID == 0)) {  # Continue until all segments are assigned an axis_ID
+  # Assign the current section number to the segment
   skel[seg_ID == cur_seg$seg_ID, section := cur_sec]
-  childs <- skel[bearer_ID == cur_seg$seg_ID]
   
-  if (nrow(childs) == 1) {  # Only one child node -> belongs to the same axis
-    skel[seg_ID == childs$seg_ID, axis_ID := cur_ID]
-    cur_seg <- childs
-  } else if (nrow(childs) > 1) {  # Multiple child nodes -> select the node bearing the longest structure
-    max_child_idx <- which.max(childs$bear_length)
-    skel[seg_ID == childs$seg_ID[max_child_idx], axis_ID := cur_ID]
-    cur_seg <- childs[max_child_idx, ]
+  # Retrieve all child nodes of the current segment
+  child_nodes <- skel[bearer_ID == cur_seg$seg_ID]
+  
+  if (nrow(child_nodes) == 1) {
+    # Case 1: Only one child node
+    # Assign the child node to the current axis and continue
+    skel[seg_ID == child_nodes$seg_ID, axis_ID := cur_ID]
+    cur_seg <- child_nodes
+  } else if (nrow(child_nodes) > 1) {
+    # Case 2: Multiple child nodes
+    # Select the child node with the highest total bearing length to extend the main axis
+    max_bearing_idx <- which.max(child_nodes$bear_length)
     
-    queue <- c(queue, childs$seg_ID[-max_child_idx])
+    # Assign the selected child node to the current axis
+    skel[seg_ID == child_nodes$seg_ID[max_bearing_idx], axis_ID := cur_ID]
+    cur_seg <- child_nodes[max_bearing_idx]
+    
+    # Add the remaining child nodes to the queue for future processing
+    node_queue <- c(node_queue, child_nodes$seg_ID[-max_bearing_idx])
     cur_sec <- cur_sec + 1
-  } else {  # No child nodes -> select the next node from the queue and increment cur_ID
-    cur_ID <- cur_ID + 1
-    cur_ID <- cur_ID + 1
-    cur_seg <- skel[seg_ID == queue[1]]
-    skel[seg_ID == cur_seg$seg_ID, axis_ID := cur_ID]
-    
-    queue <- queue[-1]
-    
-    cur_sec <- cur_sec + 1
+  } else {
+    # Case 3: No child nodes
+    # Retrieve the next segment from the queue and start a new axis
+    if (length(node_queue) > 0) {
+      cur_seg <- skel[seg_ID == node_queue[1]]
+      node_queue <- node_queue[-1]
+      cur_ID <- cur_ID + 1
+      skel[seg_ID == cur_seg$seg_ID, axis_ID := cur_ID]
+      cur_sec <- cur_sec + 1
+    } else {
+      # If the queue is empty and there are still unprocessed segments, terminate the loop
+      break
+    }
   }
 }
 
-
-# ADD BRANCHING ORDER
-cur_BO = skel[skel$axis_ID == 1] # axes of branching order 1
-skel[axis_ID == 1,branching_order := 1]
-BO = 2 # first branching order to detect
-while(nrow(cur_BO)>0){
-  # find all child axes of the axes of the curent BO
-  child_axes=skel[bearer_ID %in% cur_BO$seg_ID &
-                    !(axis_ID %in% unique(cur_BO$axis_ID)),c(axis_ID)]
-  # add the new BO to the child axes
-  skel[axis_ID %in% child_axes,branching_order := BO]
-  # select the child axes for the next round
-  cur_BO = skel[skel$axis_ID %in% child_axes]
-  BO = BO+1
-}
 
 # Create the new_skeleton data table
 new_skeleton <- skel[, .(
   startX, startY, startZ, endX, endY, endZ, 
   cyl_ID = seg_ID, parent_ID = bearer_ID, 
   extension_ID = 0, length, axis_ID, 
-  segment_ID = section, node_ID = 0, branching_order
+  segment_ID = section, node_ID = 0
 )]
 
 # Optimize the segment_ID
@@ -312,4 +312,3 @@ colnames(result)[ncol(result)] <- "angle"
 
 # save automated extraction branch angles
 write.table(result, file = outpath, row.names = FALSE, col.names = TRUE)
-
