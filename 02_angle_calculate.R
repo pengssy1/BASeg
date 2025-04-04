@@ -300,6 +300,10 @@ for (i in 2:number) {
       # Append the results to the result data frames
       angle <- angle_rad * (180 / pi)
       
+      if (angle > 120) {
+        angle <- 180 - angle
+      }
+      
       start_result <- rbind(start_result, a)
       angle_result <- rbind(angle_result, angle)
       
