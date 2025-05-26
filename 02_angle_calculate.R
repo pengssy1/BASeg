@@ -6,7 +6,7 @@ library(dplyr)
 
 # Read data and set column names
 inpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/skeleton7_test.txt"
-outpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/tree12_angle.txt"
+outpath <- "C:/Users/xipeng/Downloads/L1-Tree-main/Results/tree7_angle.txt"
 
 data <- fread(inpath)
 colnames(data)[1:4] <- c("X", "Y", "Z","order")
@@ -52,10 +52,7 @@ while (nrow(data2) > 0) {
   i <- i + 1
 }
 
-
-#######################################################
 #- clustering non connected components in each layer -#
-#######################################################
 
 # Perform clustering calculation for each layer
 for (i in sort(unique(data$iter))) {
@@ -80,9 +77,8 @@ for (i in sort(unique(data$iter))) {
     data[in_iter, cluster := 1]
   }
 }
-########################
+
 #- Build the skeleton -#
-########################
 
 # Calculate the center of each cluster
 cluster <- data[, .(X = mean(X), Y = mean(Y), Z = mean(Z), iter = iter), by = .(iter, cluster)]
@@ -137,9 +133,8 @@ skel <- skel[-1,]
 skel[, length := sqrt((startX - endX)^2 + (startY - endY)^2 + (startZ - endZ)^2)]
 skel <- skel[length > 0]
 
-######################
 #- compute topology -#
-######################
+
 # Create segment ID
 skel[, seg_ID := .I]  # Use .I for more efficient row number generation as seg_ID
 
@@ -165,7 +160,6 @@ cur_ID <- 1  # Current axis ID
 cur_sec <- 1  # Current section
 
 skel[bearer_ID == 0, axis_ID := cur_ID]  # Assign axis_ID to the starting segment
-
 
 # Initialize the queue
 node_queue <- integer(0)  
@@ -210,7 +204,6 @@ while (any(skel$axis_ID == 0)) {  # Continue until all segments are assigned an 
   }
 }
 
-
 # Create the new_skeleton data table
 new_skeleton <- skel[, .(
   startX, startY, startZ, endX, endY, endZ, 
@@ -234,10 +227,7 @@ new_skeleton[, extension_ID := FNN::knnx.index(data = new_skeleton[, .(startX, s
 
 new_skeleton[cyl_ID == extension_ID | !cyl_ID %in% parent_ID, extension_ID := 0]
 
-
-######################
 #- Compute branch angles -#
-######################
 
 # Extract unique node_IDs
 node_ID <- data.frame(new_skeleton$node_ID)
@@ -299,10 +289,6 @@ for (i in 2:number) {
       
       # Append the results to the result data frames
       angle <- angle_rad * (180 / pi)
-      
-      if (angle > 120) {
-        angle <- 180 - angle
-      }
       
       start_result <- rbind(start_result, a)
       angle_result <- rbind(angle_result, angle)
